@@ -1,103 +1,93 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useCallback, useState } from "react";
+import Link from "next/link";
+import { api } from "@/lib/api";
+import { Shell } from "@/components/shell";
+import { PageHeader } from "@/components/ui";
+import { useLiveRefresh } from "@/lib/live";
+
+type Overview = {
+  restaurants: number;
+  activities: number;
+  posts: number;
+  users: number;
+  souqAds: number;
+  awaiting: number;
+  pending: number;
+  events: number;
+  eventsToday: number;
+};
+
+const CARDS = [
+  ["Eat places", "restaurants", "/eat"],
+  ["Play activities", "activities", "/play"],
+  ["Guide posts", "posts", "/guides"],
+  ["App users", "users", "/users"],
+  ["Souq ads", "souqAds", "/souq"],
+  ["Awaiting approval", "awaiting", "/souq/approvals"],
+  ["Events today", "eventsToday", "/analytics"],
+] as const;
+
+export default function OverviewPage() {
+  const [data, setData] = useState<Overview | null>(null);
+  const [actions, setActions] = useState<Array<{ action: string; entity: string; entity_id: string; created_at: string }>>([]);
+
+  const load = useCallback(async () => {
+    const [next, nextActions] = await Promise.all([
+      api<Overview>("/admin/overview"),
+      api<{ items: typeof actions }>("/admin/actions?limit=8"),
+    ]);
+    setData(next);
+    setActions(nextActions.items);
+  }, []);
+
+  useLiveRefresh(load, 4000);
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <Shell>
+      <PageHeader
+        kicker="Today"
+        title="Overview"
+        hint="Live counts from the KSA 360 database. Approve ads, edit Eat and Play, and follow a user journey from here."
+      />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {CARDS.map(([label, key, href]) => (
+          <Link key={key} href={href} className="panel p-5">
+            <p className="text-sm text-muted">{label}</p>
+            <p className="display mt-3 text-[28px]">{data ? data[key] : "—"}</p>
+          </Link>
+        ))}
+      </div>
+      <section className="panel mt-6 p-6">
+        <h2 className="text-lg font-semibold tracking-tight">Recent admin actions</h2>
+        <div className="mt-4">
+          {actions.length === 0 ? (
+            <p className="text-sm text-muted">No edits yet.</p>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>Entity</th>
+                  <th>When</th>
+                </tr>
+              </thead>
+              <tbody>
+                {actions.map((item) => (
+                  <tr key={`${item.created_at}-${item.entity_id}`}>
+                    <td>{item.action}</td>
+                    <td>
+                      {item.entity} · {item.entity_id}
+                    </td>
+                    <td className="text-muted">{item.created_at.replace("T", " ").slice(0, 16)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </section>
+    </Shell>
   );
 }

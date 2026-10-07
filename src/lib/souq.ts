@@ -59,6 +59,7 @@ export function specPairs(ad: SouqAd) {
   const attrs = ad.attributes || {};
   const used = new Set<string>();
   const pairs: Array<[string, string]> = [];
+  const isCar = ad.categoryId === "cars";
   const push = (label: string, value: unknown, key?: string) => {
     let shown = text(value);
     if (!shown) return;
@@ -69,10 +70,12 @@ export function specPairs(ad: SouqAd) {
     if (key) used.add(key);
   };
 
-  push("Make", ad.make || attrs.make, "make");
-  for (const [key, label] of SPEC_KEYS) {
-    if (key === "make") continue;
-    push(label, attrs[key] ?? (key === "bodyType" ? ad.bodyType : ""), key);
+  push("Make", isCar ? ad.make || attrs.make : "", "make");
+  if (isCar) {
+    for (const [key, label] of SPEC_KEYS) {
+      if (key === "make") continue;
+      push(label, attrs[key] ?? (key === "bodyType" ? ad.bodyType : ""), key);
+    }
   }
   if (ad.condition) push("Condition", ad.condition);
   if (ad.district) push("District", ad.district);

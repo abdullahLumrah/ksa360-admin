@@ -10,10 +10,13 @@ import { useLiveRefresh } from "@/lib/live";
 type Overview = {
   restaurants: number;
   activities: number;
+  healthFacilities: number;
   posts: number;
   users: number;
   souqAds: number;
   awaiting: number;
+  awaitingJobs: number;
+  publishedJobs: number;
   pending: number;
   events: number;
   eventsToday: number;
@@ -22,16 +25,27 @@ type Overview = {
 const CARDS = [
   ["Eat places", "restaurants", "/eat"],
   ["Play activities", "activities", "/play"],
+  ["Care hospitals", "healthFacilities", "/care"],
   ["Guide posts", "posts", "/guides"],
   ["App users", "users", "/users"],
   ["Souq ads", "souqAds", "/souq"],
+  ["Jobs live", "publishedJobs", "/jobs"],
+  ["Job queue", "awaitingJobs", "/jobs/approvals"],
   ["Awaiting approval", "awaiting", "/souq/approvals"],
   ["Events today", "eventsToday", "/analytics"],
 ] as const;
 
 export default function OverviewPage() {
   const [data, setData] = useState<Overview | null>(null);
-  const [actions, setActions] = useState<Array<{ action: string; entity: string; entity_id: string; created_at: string }>>([]);
+  const [actions, setActions] = useState<
+    Array<{
+      action_id?: string;
+      action: string;
+      entity: string;
+      entity_id: string;
+      created_at: string;
+    }>
+  >([]);
 
   const load = useCallback(async () => {
     const [next, nextActions] = await Promise.all([
@@ -49,7 +63,7 @@ export default function OverviewPage() {
       <PageHeader
         kicker="Today"
         title="Overview"
-        hint="Live counts from the KSA 360 database. Approve ads, edit Eat and Play, and follow a user journey from here."
+        hint="Live counts from the KSA 360 database. Approve ads, edit Eat, Play and Care, and follow a user journey from here."
       />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {CARDS.map(([label, key, href]) => (
@@ -74,8 +88,8 @@ export default function OverviewPage() {
                 </tr>
               </thead>
               <tbody>
-                {actions.map((item) => (
-                  <tr key={`${item.created_at}-${item.entity_id}`}>
+                {actions.map((item, index) => (
+                  <tr key={item.action_id || `${item.created_at}-${item.entity_id}-${item.action}-${index}`}>
                     <td>{item.action}</td>
                     <td>
                       {item.entity} · {item.entity_id}

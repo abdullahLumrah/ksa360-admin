@@ -6,17 +6,21 @@ export default function GuidesPage() {
   return (
     <ResourceDesk
       title="Guides"
-      hint="Posts served by the Guides API. Search a category topic, edit the title or cover, or take a post down."
+      hint="Published posts on the Guides API. User requests stay in Guide queue until you approve them."
       path="/admin/posts"
+      allowCreate
+      createLabel="Add post"
+      createDefaults={{ status: "published", source: "admin" }}
       columns={[
         { key: "image", label: "" },
         { key: "title", label: "Title" },
         { key: "date", label: "Date" },
+        { key: "status", label: "Status" },
         { key: "source", label: "Source" },
       ]}
       fields={[
         { key: "title", label: "Title" },
-        { key: "excerpt", label: "Excerpt", multiline: true },
+        { key: "excerpt", label: "Description", multiline: true },
         { key: "image", label: "Image URL" },
       ]}
     />

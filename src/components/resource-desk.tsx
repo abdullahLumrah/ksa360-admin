@@ -5,7 +5,17 @@ import { api, mediaUrl, type Page } from "@/lib/api";
 import { Shell } from "@/components/shell";
 import { PageHeader, Thumb } from "@/components/ui";
 
-type Field = { key: string; label: string; multiline?: boolean };
+type Field = { key: string; label: string; multiline?: boolean; type?: "text" | "checkbox" };
+
+function isOn(value: unknown) {
+  return value === true || value === 1 || value === "1" || value === "true" || value === "yes";
+}
+
+function fieldString(value: unknown) {
+  if (Array.isArray(value)) return value.join(", ");
+  if (value == null) return "";
+  return String(value);
+}
 
 function cell(row: Record<string, unknown>, key: string) {
   const value = row[key];
@@ -15,7 +25,13 @@ function cell(row: Record<string, unknown>, key: string) {
   if (key === "video") {
     return value ? <span className="text-xs text-muted">{String(value)}</span> : "—";
   }
-  const text = value == null ? "" : String(value);
+  if (key === "emergency") {
+    return isOn(value) ? "ER" : "—";
+  }
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "—";
+  }
+  const text = fieldString(value);
   return text.length > 64 ? `${text.slice(0, 64)}…` : text || "—";
 }
 
@@ -25,12 +41,20 @@ export function ResourceDesk({
   path,
   fields,
   columns,
+  allowCreate = false,
+  createLabel = "Add",
+  createDefaults,
+  searchHint = "Search name, city, or kind",
 }: {
   title: string;
   hint: string;
   path: string;
   fields: Field[];
   columns: Array<{ key: string; label: string }>;
+  allowCreate?: boolean;
+  createLabel?: string;
+  createDefaults?: Record<string, unknown>;
+  searchHint?: string;
 }) {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
@@ -54,11 +78,16 @@ export function ResourceDesk({
 
   async function save(event: FormEvent) {
     event.preventDefault();
-    if (!edit?.id) return;
+    if (!edit) return;
     setError("");
     setBusy(true);
     try {
-      await api(`${path}/${edit.id}`, { method: "PATCH", body: JSON.stringify(edit) });
+      const id = String(edit.id || "").trim();
+      if (id) {
+        await api(`${path}/${id}`, { method: "PATCH", body: JSON.stringify(edit) });
+      } else {
+        await api(path, { method: "POST", body: JSON.stringify(edit) });
+      }
       setEdit(null);
       await load();
     } catch (err) {
@@ -80,7 +109,7 @@ export function ResourceDesk({
       <div className="flex gap-3">
         <input
           className="field max-w-md"
-          placeholder="Search name, city, or kind"
+          placeholder={searchHint}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && load(0, q)}
@@ -88,6 +117,11 @@ export function ResourceDesk({
         <button className="btn btn-ghost" onClick={() => load(0, q)}>
           Search
         </button>
+        {allowCreate ? (
+          <button className="btn btn-green" onClick={() => setEdit({ ...(createDefaults || {}) })}>
+            {createLabel}
+          </button>
+        ) : null}
       </div>
       {error ? <p className="mt-4 text-danger">{error}</p> : null}
       <div className="panel table-wrap mt-6 overflow-hidden">
@@ -137,25 +171,38 @@ export function ResourceDesk({
       {edit ? (
         <div className="fixed inset-0 z-20 grid place-items-center bg-ink/40 px-6">
           <form onSubmit={save} className="panel max-h-[90vh] w-full max-w-lg overflow-auto p-6">
-            <h2 className="display text-[26px]">Edit</h2>
+            <h2 className="display text-[26px]">{edit.id ? "Edit" : createLabel}</h2>
             {typeof edit.image === "string" && edit.image ? (
               <img src={mediaUrl(String(edit.image))} alt="" className="mt-4 h-36 w-full rounded-[20px] object-cover" />
             ) : null}
             {fields.map((field) => (
               <label key={field.key} className="mt-4 block text-sm">
-                {field.label}
-                {field.multiline ? (
-                  <textarea
-                    className="field mt-2 min-h-24"
-                    value={String(edit[field.key] ?? "")}
-                    onChange={(e) => setEdit({ ...edit, [field.key]: e.target.value })}
-                  />
+                {field.type === "checkbox" ? (
+                  <span className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={isOn(edit[field.key])}
+                      onChange={(e) => setEdit({ ...edit, [field.key]: e.target.checked })}
+                    />
+                    {field.label}
+                  </span>
                 ) : (
-                  <input
-                    className="field mt-2"
-                    value={String(edit[field.key] ?? "")}
-                    onChange={(e) => setEdit({ ...edit, [field.key]: e.target.value })}
-                  />
+                  <>
+                    {field.label}
+                    {field.multiline ? (
+                      <textarea
+                        className="field mt-2 min-h-24"
+                        value={fieldString(edit[field.key])}
+                        onChange={(e) => setEdit({ ...edit, [field.key]: e.target.value })}
+                      />
+                    ) : (
+                      <input
+                        className="field mt-2"
+                        value={fieldString(edit[field.key])}
+                        onChange={(e) => setEdit({ ...edit, [field.key]: e.target.value })}
+                      />
+                    )}
+                  </>
                 )}
               </label>
             ))}

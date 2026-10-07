@@ -10,15 +10,21 @@ const NAV = [
   { href: "/analytics", label: "Analytics" },
   { href: "/eat", label: "Eat" },
   { href: "/play", label: "Play" },
+  { href: "/care", label: "Care" },
   { href: "/guides", label: "Guides" },
+  { href: "/guides/approvals", label: "Guide queue" },
   { href: "/souq", label: "Souq" },
   { href: "/souq/approvals", label: "Approvals" },
+  { href: "/jobs", label: "Jobs" },
+  { href: "/jobs/approvals", label: "Job queue" },
   { href: "/users", label: "Users" },
 ];
 
 function navActive(path: string, href: string) {
   if (href === "/") return path === "/";
   if (href === "/souq") return path === "/souq" || (path.startsWith("/souq/") && !path.startsWith("/souq/approvals"));
+  if (href === "/jobs") return path === "/jobs" || (path.startsWith("/jobs/") && !path.startsWith("/jobs/approvals"));
+  if (href === "/guides") return path === "/guides";
   return path === href || path.startsWith(`${href}/`);
 }
 
@@ -28,6 +34,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [email, setEmail] = useState("");
   const [awaiting, setAwaiting] = useState(0);
+  const [awaitingPosts, setAwaitingPosts] = useState(0);
+  const [awaitingJobs, setAwaitingJobs] = useState(0);
 
   useEffect(() => {
     if (!getToken()) {
@@ -40,8 +48,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
         setReady(true);
       })
       .catch(() => router.replace("/login"));
-    api<{ awaiting: number }>("/admin/overview")
-      .then((data) => setAwaiting(data.awaiting || 0))
+    api<{ awaiting: number; awaitingPosts: number; awaitingJobs: number }>("/admin/overview")
+      .then((data) => {
+        setAwaiting(data.awaiting || 0);
+        setAwaitingPosts(data.awaitingPosts || 0);
+        setAwaitingJobs(data.awaitingJobs || 0);
+      })
       .catch(() => {});
   }, [router]);
 
@@ -62,6 +74,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <span>{item.label}</span>
                 {item.href === "/souq/approvals" && awaiting > 0 ? (
                   <em className="nav-badge not-italic">{awaiting}</em>
+                ) : null}
+                {item.href === "/guides/approvals" && awaitingPosts > 0 ? (
+                  <em className="nav-badge not-italic">{awaitingPosts}</em>
+                ) : null}
+                {item.href === "/jobs/approvals" && awaitingJobs > 0 ? (
+                  <em className="nav-badge not-italic">{awaitingJobs}</em>
                 ) : null}
               </Link>
             );

@@ -17,13 +17,19 @@ const NAV = [
   { href: "/souq/approvals", label: "Approvals" },
   { href: "/jobs", label: "Jobs" },
   { href: "/jobs/approvals", label: "Job queue" },
+  { href: "/communities", label: "Communities" },
+  { href: "/communities/reports", label: "Reports" },
   { href: "/users", label: "Users" },
+  { href: "/push", label: "Push" },
 ];
 
 function navActive(path: string, href: string) {
   if (href === "/") return path === "/";
   if (href === "/souq") return path === "/souq" || (path.startsWith("/souq/") && !path.startsWith("/souq/approvals"));
   if (href === "/jobs") return path === "/jobs" || (path.startsWith("/jobs/") && !path.startsWith("/jobs/approvals"));
+  if (href === "/communities") {
+    return path === "/communities" || (path.startsWith("/communities/") && !path.startsWith("/communities/reports"));
+  }
   if (href === "/guides") return path === "/guides";
   return path === href || path.startsWith(`${href}/`);
 }
@@ -36,6 +42,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [awaiting, setAwaiting] = useState(0);
   const [awaitingPosts, setAwaitingPosts] = useState(0);
   const [awaitingJobs, setAwaitingJobs] = useState(0);
+  const [openReports, setOpenReports] = useState(0);
 
   useEffect(() => {
     if (!getToken()) {
@@ -48,11 +55,17 @@ export function Shell({ children }: { children: React.ReactNode }) {
         setReady(true);
       })
       .catch(() => router.replace("/login"));
-    api<{ awaiting: number; awaitingPosts: number; awaitingJobs: number }>("/admin/overview")
+    api<{
+      awaiting: number;
+      awaitingPosts: number;
+      awaitingJobs: number;
+      openReports: number;
+    }>("/admin/overview")
       .then((data) => {
         setAwaiting(data.awaiting || 0);
         setAwaitingPosts(data.awaitingPosts || 0);
         setAwaitingJobs(data.awaitingJobs || 0);
+        setOpenReports(data.openReports || 0);
       })
       .catch(() => {});
   }, [router]);
@@ -80,6 +93,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 ) : null}
                 {item.href === "/jobs/approvals" && awaitingJobs > 0 ? (
                   <em className="nav-badge not-italic">{awaitingJobs}</em>
+                ) : null}
+                {item.href === "/communities/reports" && openReports > 0 ? (
+                  <em className="nav-badge not-italic">{openReports}</em>
                 ) : null}
               </Link>
             );

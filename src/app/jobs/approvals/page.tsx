@@ -26,7 +26,6 @@ type Job = {
 
 const QUEUES = [
   ["awaiting_approval", "New posts"],
-  ["declined", "Declined"],
   ["published", "Published"],
 ] as const;
 
@@ -56,7 +55,7 @@ export default function JobApprovalsPage() {
       <PageHeader
         kicker="Queue"
         title="Job posts"
-        hint="Employer submissions stay hidden until you accept them. Approve a job to publish it in the app."
+        hint="Employer submissions stay hidden until you accept them. Decline removes the job."
       />
       <div className="flex flex-wrap items-center gap-2">
         {QUEUES.map(([value, label]) => (

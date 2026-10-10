@@ -7,7 +7,7 @@ import { api, mediaUrl } from "@/lib/api";
 import { useLiveRefresh } from "@/lib/live";
 import { specPairs, type SouqAd } from "@/lib/souq";
 import { Shell } from "@/components/shell";
-import { money } from "@/components/ui";
+import { money, prettyStatus } from "@/components/ui";
 
 export default function SouqAdPage() {
   const params = useParams<{ id: string }>();
@@ -106,7 +106,7 @@ export default function SouqAdPage() {
           {ad.subtitle ? <p className="lede mt-2">{ad.subtitle}</p> : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className={`pill pill-${ad.status}`}>{ad.status.replaceAll("_", " ")}</span>
+          <span className={`pill pill-${ad.status || "unknown"}`}>{prettyStatus(ad.status)}</span>
           <button className="btn btn-green" onClick={() => act("approve")}>
             Approve
           </button>

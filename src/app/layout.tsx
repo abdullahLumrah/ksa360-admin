@@ -8,6 +8,9 @@ const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
 });
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "KSA 360 Admin",
   description: "Operations desk for Eat, Play, Guides, Souq, and users.",

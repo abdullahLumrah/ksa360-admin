@@ -6,7 +6,7 @@ import { api, mediaUrl, type Page } from "@/lib/api";
 import { useLiveRefresh } from "@/lib/live";
 import { type SouqAd } from "@/lib/souq";
 import { Shell } from "@/components/shell";
-import { PageHeader, Thumb, money } from "@/components/ui";
+import { PageHeader, Thumb, money, prettyStatus } from "@/components/ui";
 
 type Category = { id: string; name: string };
 
@@ -29,7 +29,13 @@ export default function SouqPage() {
       ...(category ? { category } : {}),
       ...(status ? { status } : {}),
     });
-    setData(await api(`/admin/souq/ads?${params}`));
+    const payload = await api<Page<SouqAd>>(`/admin/souq/ads?${params}`);
+    setData({
+      items: Array.isArray(payload?.items) ? payload.items.filter(Boolean) : [],
+      total: Number(payload?.total || 0),
+      page: Number(payload?.page || 0),
+      limit: Number(payload?.limit || 20),
+    });
     setPage(next);
   }
 
@@ -37,9 +43,8 @@ export default function SouqPage() {
 
   useEffect(() => {
     api<{ items: Category[] }>("/admin/souq/categories")
-      .then((res) => setCategories(res.items))
-      .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      .then((res) => setCategories(Array.isArray(res?.items) ? res.items : []))
+      .catch(() => setCategories([]));
   }, []);
 
   async function save(event: FormEvent) {
@@ -134,7 +139,7 @@ export default function SouqPage() {
                 <td>{ad.make || "—"}</td>
                 <td>{ad.city}</td>
                 <td>
-                  <span className={`pill pill-${ad.status}`}>{ad.status.replaceAll("_", " ")}</span>
+                  <span className={`pill pill-${ad.status || "unknown"}`}>{prettyStatus(ad.status)}</span>
                 </td>
                 <td>{ad.views}</td>
                 <td className="whitespace-nowrap text-right">

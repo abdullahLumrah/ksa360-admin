@@ -32,6 +32,10 @@ export function money(value: number | null | undefined) {
   return `${new Intl.NumberFormat("en-US").format(value)} SAR`;
 }
 
+export function prettyStatus(value?: string | null) {
+  return String(value || "unknown").replaceAll("_", " ");
+}
+
 export function prettyGender(value?: string | null) {
   const raw = (value || "").trim();
   if (!raw) return "—";

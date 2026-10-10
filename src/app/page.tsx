@@ -18,8 +18,14 @@ type Overview = {
   awaitingJobs: number;
   publishedJobs: number;
   pending: number;
+  communities: number;
+  openReports: number;
   events: number;
   eventsToday: number;
+  uniqueUsersToday: number;
+  uniqueLoginsToday: number;
+  pushTokens: number;
+  pushPending: number;
 };
 
 const CARDS = [
@@ -31,8 +37,14 @@ const CARDS = [
   ["Souq ads", "souqAds", "/souq"],
   ["Jobs live", "publishedJobs", "/jobs"],
   ["Job queue", "awaitingJobs", "/jobs/approvals"],
+  ["Communities", "communities", "/communities"],
+  ["Open reports", "openReports", "/communities/reports"],
   ["Awaiting approval", "awaiting", "/souq/approvals"],
   ["Events today", "eventsToday", "/analytics"],
+  ["Unique people today", "uniqueUsersToday", "/analytics"],
+  ["Unique logins today", "uniqueLoginsToday", "/analytics"],
+  ["Push devices", "pushTokens", "/push"],
+  ["Scheduled pushes", "pushPending", "/push"],
 ] as const;
 
 export default function OverviewPage() {

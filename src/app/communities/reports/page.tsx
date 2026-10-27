@@ -20,6 +20,7 @@ type Snapshot = {
   post?: { id?: string; body?: string; authorName?: string };
   comment?: { id?: string; body?: string; authorName?: string; parentId?: string };
   comments?: SnapshotComment[];
+  ad?: { id?: string; title?: string; city?: string; sellerName?: string; price?: number | null };
 };
 
 type Report = {
@@ -120,6 +121,14 @@ export default function CommunityReportsPage() {
       await setReport(report.id, "resolved", "Deleted");
       return;
     }
+    if (report.targetType === "souq_ad" && report.targetId) {
+      await api(`/admin/souq/ads/${report.targetId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "declined" }),
+      });
+      await setReport(report.id, "resolved", "Listing hidden");
+      return;
+    }
     await setReport(report.id, "resolved", "Deleted");
   }
 
@@ -128,7 +137,7 @@ export default function CommunityReportsPage() {
       <PageHeader
         kicker="Safety"
         title="Community reports"
-        hint="Reported posts, comments, and replies land here with the full thread. Keep the content or delete it."
+        hint="Reported posts, comments, blocked users, and Marketplace listings land here. Keep the content or delete it."
       />
       <div className="flex flex-wrap items-center gap-2">
         {QUEUES.map(([value, label]) => (
@@ -171,7 +180,9 @@ export default function CommunityReportsPage() {
                     .join(" · ")}
                 </p>
                 <p className="mt-1 text-lg font-semibold tracking-tight">
-                  {report.reportedUserName || report.targetId || "Report"}
+                  {report.reason === "Block user"
+                    ? `Blocked · ${report.reportedUserName || snap?.ad?.sellerName || report.targetId || "user"}`
+                    : report.reportedUserName || snap?.ad?.title || report.targetId || "Report"}
                 </p>
                 <p className="mt-1 text-sm text-muted">
                   Reporter: {report.reporterName || "—"}
@@ -181,6 +192,15 @@ export default function CommunityReportsPage() {
                 </p>
                 {report.details ? (
                   <p className="mt-2 text-sm leading-6">{report.details}</p>
+                ) : null}
+                {snap?.ad ? (
+                  <div className="mt-4 rounded-2xl border border-black/10 p-4">
+                    <p className="text-xs uppercase tracking-wide text-muted">Marketplace listing</p>
+                    <p className="mt-1 text-sm font-semibold">{snap.ad.title}</p>
+                    <p className="mt-1 text-sm text-muted">
+                      {[snap.ad.sellerName, snap.ad.city].filter(Boolean).join(" · ")}
+                    </p>
+                  </div>
                 ) : null}
 
                 {snap?.post ? (
